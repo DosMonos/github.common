@@ -1,0 +1,40 @@
+# Reusable workflow that links GitHub Pull Requests with Asana issues.
+# It populates the "GitHub" issue field in projects that have it enabled, and
+# adds a comment when a PR is opened/closed/reopened.
+#
+# See:
+#  https://asana.com/guide/help/api/github
+#  https://github.com/Asana/comment-on-task-github-action
+#  https://github.com/Asana/create-app-attachment-github-action
+
+name: Asana integration
+
+on:
+  workflow_call:
+    secrets:
+      asana_secret:
+        required: true
+        description: >-
+          Asana secret for the action.
+
+jobs:
+  create-comment-in-asana-task-job:
+    runs-on: ubuntu-latest
+    name: Create pull request attachements and comment in Asana Task
+    steps:
+      - name: Create pull request attachments
+        uses: Asana/create-app-attachment-github-action@latest
+        id: postAttachment
+        with:
+          asana-secret: ${{ secrets.asana_secret }}
+      - name: Log output status
+        run: echo "Status is ${{ steps.postAttachment.outputs.status }}"
+
+      - name: Create a comment
+        uses: Asana/comment-on-task-github-action@latest
+        id: createComment
+        with:
+          asana-secret: ${{ secrets.asana_secret }}
+          comment-text: "PR#{{PR_ID}} ({{PR_NAME}}) is {{PR_STATE}}: {{PR_URL}}"
+      - name: Get status
+        run: echo "Status is ${{ steps.createComment.outputs.status }}"
